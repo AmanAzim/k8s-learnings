@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-express
+  labels:
+    app: mongo-express # label that works as reference for Services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-express
+  template:
+    metadata:
+      labels:
+        app: mongo-express
+    spec:
+      containers:
+        - name: mongo-express
+          image: mongo-express
+          ports:
+            - containerPort: 8081
+          env:
+            - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: mongo-root-username
+            - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: mongo-root-password
+            - name: ME_CONFIG_MONGODB_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-configmap
+                  key: database_url
+--- # allows creating different configurations in 1 file instead of creating new yaml files
+
+apiVersion: v1 #external service
+kind: Service
+metadata:
+  name: mongo-express-service
+spec:
+  selector:
+    app: mongo-express # Selector: it finds the pods it needs to attach with by this label. In Deployment metadata we have the label "mongo-express"
+  type: LoadBalancer # this type makes it an external service along with an internal normal IP address. It accepts external requests means requests from other deploymnets by assigning its own deployment (service) an external IP address.
+  ports:
+    - protocol: TCP
+      port: 8081 # service port. this can be same or different than targetPort
+      targetPort: 8081 # containerPort port of the deployment
+      nodePort: 30000 # range (30000-32767). Port for external IP address. this port need to be used in the browser to access this service when an external wants to access it. Only for minikube we need to assign nodePort manually by > minikube service mongo-express-service. Lool video at 1:45.00 min

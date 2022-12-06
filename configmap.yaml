@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap # a common place to store all env values so different deployment can read it from a single place
+metadata:
+  name: mongodb-configmap
+  namespace: my-namespace # optional. like this we can assign a namespace to this config map
+data:
+  database_url: mongodb-service # serveice name of the mongodb service
